@@ -2,16 +2,12 @@ import psycopg2
 import yaml
 
 def connect(hostname, port, user, password, database):
-    
+
     conn = psycopg2.connect(host=hostname, port=port, user=user, password=password, database="postgres")
     conn.autocommit = True
     cur = conn.cursor()
-    
-    try:
-        cur.execute(f"create database {database}")
-    except:
-        print("Database already exists, skipping database creation")
 
+    cur.execute(f"create database {database}")
     close_connection(conn)
 
     conn = psycopg2.connect(host=hostname, port=port, user=user, password=password, database=database)
@@ -32,6 +28,9 @@ def create_tables(cur):
 with open("./config.yaml", "r") as f:
     cred = yaml.load(f, Loader=yaml.FullLoader)
 
-conn, cur = connect(cred["hostname"], cred["port"], cred["username"], cred["password"], cred["db_name"])
-create_tables(cur)
-close_connection(conn)
+try:
+    conn, cur = connect(cred["hostname"], cred["port"], cred["username"], cred["password"], cred["db_name"])
+    create_tables(cur)
+    close_connection(conn)
+except:
+    print("Database or table already exist")

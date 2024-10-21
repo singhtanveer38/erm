@@ -31,3 +31,8 @@ create table subject_result(
 	percentage float,
 	category varchar(16)
 );
+
+create table loaded_files(
+	timestamp timestamp,
+	filename varchar(120)
+);
