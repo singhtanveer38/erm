@@ -2,6 +2,6 @@ hostname: "localhost"
 port: 5432
 username: "postgres"
 password: "password"
-db_name: "education_dbb"
+db_name: "yo"
 data_dir: "/home/tanveer/Documents/projects/kv_dashboards/marksheets/"
 processed_dir: "/home/tanveer/Desktop/processed/"

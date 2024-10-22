@@ -1,79 +1,13 @@
-import psycopg2
-import yaml
-import numpy as np
-import pandas as pd
-import os
+from helper import create_db, read_config, connect, create_tables, close_connection
 
-def connect(hostname, port, user, password, database):
-    conn = psycopg2.connect(host=hostname, port=port, user=user, password=password, database="postgres")
-    conn.autocommit = True
-    cur = conn.cursor()
-
-    cur.execute(f"create database {database}")
-    close_connection(conn)
-
-    conn = psycopg2.connect(host=hostname, port=port, user=user, password=password, database=database)
-    conn.autocommit = True
-    cur = conn.cursor()
-
-    return conn, cur
-
-def close_connection(conn):
-    conn.close()
-
-def create_tables(cur):
-    with open("./create_tables.sql", "r") as f:
-        sql = f.readlines()
-        sql = "".join(sql)
-    cur.execute(sql)
-
-def read_config():
-    with open("./config.yaml", "r") as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
-    return config
-
-def preprocessing(dataDir, processedDir):
-    # config = read_config()
-
-    # dataDir = config["data_dir"]
-    # processedDir = config["processed_dir"]
-
-    if not os.path.exists(processedDir):
-        os.makedirs(processedDir)
-
-    for file in os.listdir(dataDir):
-        print(file)
-        if file.split(".")[-1] == "csv":
-            print("Processing "+file)
-            df = pd.read_csv(dataDir+file)
-            std, sec, exam, exam_total = file.split("_")[1:]
-            exam_total = exam_total.split(".")[0]
-
-            df["class"] = std
-            df["section"] = sec
-            df["exam"] = exam
-            df["exam_total"] = exam_total
-
-            df = df.melt(id_vars=["roll no", "name", "class", "section", "exam", "exam_total"], var_name="subject", value_name="marks")
-
-            df = df.replace(["AB", "Ab", "ab", "ABSENT", "ABSENT "], np.nan)
-
-            df.to_csv(processedDir+file, index=None)
-            print(file+" processing done")
-
-def into_db(curr, processed_dir):
-    for file in os.listdir(processed_dir):
-        with open(processed_dir+file, "r") as f:
-            curr.copy_from(f, marks, sep=",")
-
-
-
-# with open("./config.yaml", "r") as f:
-#     cred = yaml.load(f, Loader=yaml.FullLoader)
-
+config = read_config()
 # try:
-#     conn, cur = connect(cred["hostname"], cred["port"], cred["username"], cred["password"], cred["db_name"])
-#     create_tables(cur)
+#     conn, curr = connect(config["hostname"], config["port"], config["username"], config["password"], config["db_name"])
+#     create_tables(curr)
 #     close_connection(conn)
 # except:
-#     print("Database or table already exist")
+#     print("Database please update config file accordingly")
+create_db(config["hostname"], config["port"], config["username"], config["password"], config["db_name"])
+conn, curr = connect(config["hostname"], config["port"], config["username"], config["password"], config["db_name"])
+create_tables(curr)
+close_connection(conn)
