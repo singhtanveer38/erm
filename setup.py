@@ -32,11 +32,11 @@ def read_config():
         config = yaml.load(f, Loader=yaml.FullLoader)
     return config
 
-def preprocessing():
-    config = read_config()
+def preprocessing(dataDir, processedDir):
+    # config = read_config()
 
-    dataDir = config["data_dir"]
-    processedDir = config["processed_dir"]
+    # dataDir = config["data_dir"]
+    # processedDir = config["processed_dir"]
 
     if not os.path.exists(processedDir):
         os.makedirs(processedDir)
@@ -63,6 +63,8 @@ def preprocessing():
 
 def into_db(curr, processed_dir):
     for file in os.listdir(processed_dir):
+        with open(processed_dir+file, "r") as f:
+            curr.copy_from(f, marks, sep=",")
 
 
 
