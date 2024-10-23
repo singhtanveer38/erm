@@ -64,6 +64,6 @@ def into_db(conn, curr, processed_dir):
         print(f"\nLoading {file} into DB...")
         with open(processed_dir+file, "r") as f:
             curr.copy_from(f, "marks", sep=",")
-            curr.execute(f"insert into loaded_files values (current_timestamp, {file})")
+            curr.execute("insert into loaded_files(timestamp, filename) values(current_timestamp, %s)", (file,))
             conn.commit()
         print(f"{file} loaded into DB...")
