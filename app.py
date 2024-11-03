@@ -6,10 +6,10 @@ import plotly.express as px
 import numpy as np
 
 def filteredClass(class_df, std, section, exam):
-    return class_df[(class_df["class"] == std) & (class_df["section"] == section) & (class_df["exam"] == exam)]
+    return class_df[(class_df["class"] == std) & (class_df["section"] == section) & (class_df["exam_name"] == exam)]
 
 def filteredSubject(subject_df, std, section, exam, subject):
-    return subject_df[(subject_df["class"] == std) & (subject_df["section"] == section) & (subject_df["exam"] == exam) & (subject_df["subject"] == subject)]
+    return subject_df[(subject_df["class"] == std) & (subject_df["section"] == section) & (subject_df["exam_name"] == exam) & (subject_df["subject"] == subject)]
 
 @callback(
         Output("percent_df_table", "data"),
@@ -46,7 +46,7 @@ def update_total_enrolled(std, section, exam):
         Input("exam", "value"),
         )
 def update_total_passed(std, section, exam):
-    return class_df[(class_df["class"] == std) & (class_df["section"] == section) & (class_df["exam"] == exam) & (class_df["category"] != 'below_33')].shape[0]
+    return class_df[(class_df["class"] == std) & (class_df["section"] == section) & (class_df["exam_name"] == exam) & (class_df["category"] != '0_to_33')].shape[0]
 
 @callback(
         Output("total_enrolled_subject", "children"),
@@ -66,7 +66,7 @@ def update_subject_enrolled(std, section, exam, subject):
         Input("subject", "value"),
         )
 def update_subject_passed(std, section, exam, subject):
-    return subject_df[(subject_df["class"] == std) & (subject_df["section"] == section) & (subject_df["exam"] == exam) & (subject_df["subject"] == subject) & (subject_df["category"] != 'below_33')].shape[0]
+    return subject_df[(subject_df["class"] == std) & (subject_df["section"] == section) & (subject_df["exam_name"] == exam) & (subject_df["subject"] == subject) & (subject_df["category"] != '0_to_33')].shape[0]
 
 @callback(
         Output("category_distribution_class", "figure"),
@@ -76,7 +76,7 @@ def update_subject_passed(std, section, exam, subject):
         )
 def update_category_distribution_class(std, section, exam):
     fig = px.bar(
-            class_df["category"][(class_df["class"] == std) & (class_df["section"] == section) & (class_df["exam"] == exam)].value_counts(),
+            class_df["category"][(class_df["class"] == std) & (class_df["section"] == section) & (class_df["exam_name"] == exam)].value_counts(),
             title="Category-wise Distrubution in Class",
             labels={"category": "Category", "value": "No. of Students"}
             )
@@ -92,72 +92,25 @@ def update_category_distribution_class(std, section, exam):
         )
 def update_category_distribution_subject(std, section, exam, subject):
     fig = px.bar(
-            subject_df["category"][(subject_df["class"] == std) & (subject_df["section"] == section) & (subject_df["exam"] == exam) & (subject_df["subject"] == subject)].value_counts(),
+            subject_df["category"][(subject_df["class"] == std) & (subject_df["section"] == section) & (subject_df["exam_name"] == exam) & (subject_df["subject"] == subject)].value_counts(),
             title="Category-wise Distrubution in subject",
             labels={"category": "Category", "value": "No. of Students"}
             )
     fig.update_layout(showlegend=False)
     return fig
 
-# conn = psycopg2.connect(host="localhost", user="postgres", password="password", database="kv")
-# curr = conn.cursor()
 config = read_config()
 conn, curr = connect(config["hostname"], config["port"], config["username"], config["password"], config["db_name"])
 
 curr.execute("select * from marks")
+subject_df = pd.DataFrame(curr.fetchall(), columns=None)
+subject_df.columns = ["roll", "name", "class", "section", "exam_name", "exam_marks", "subject", "marks_obtained", "attendence", "percentage", "category"]
 
-df = pd.DataFrame(curr.fetchall(), columns=None)
+curr.execute("select * from overall_result")
+class_df = pd.DataFrame(curr.fetchall(), columns=None)
+class_df.columns = ["roll", "name", "class", "section", "exam_name", "exam_total", "marks_obtained", "percentage", "category"]
 
 conn.close()
-
-df.columns = ["roll", "name", "class", "section", "exam", "exam_total", "subject", "marks"]
-df.head()
-
-subject_df = df.copy()
-subject_df["percentage"] = round((subject_df["marks"]/subject_df["exam_total"]) * 100, 2)
-
-subject_category = []
-for i in subject_df["percentage"]:
-    if i < 33:
-        subject_category.append("below_33")
-    elif 33 <= i < 45:
-        subject_category.append("33_to_45")
-    elif 45 <= i < 60:
-        subject_category.append("45_to_60")
-    elif 60 <= i < 75:
-        subject_category.append("60_to_75")
-    elif 75 <= i < 90:
-        subject_category.append("75_to_90")
-    elif i >= 90:
-        subject_category.append("above_90")
-    else:
-        subject_category.append("absent")
-
-subject_df["category"] = subject_category
-
-class_df = df.copy()
-
-class_df = class_df.groupby(by=["roll", "name", "class", "section", "exam", "exam_total"], as_index=False).agg({'marks': 'sum'})
-class_df["percentage"] = round((class_df["marks"]/(class_df["exam_total"]*6))*100, 2)
-
-class_category = []
-for i in class_df["percentage"]:
-    if i < 33:
-        class_category.append("below_33")
-    elif 33 <= i < 45:
-        class_category.append("33_to_45")
-    elif 45 <= i < 60:
-        class_category.append("45_to_60")
-    elif 60 <= i < 75:
-        class_category.append("60_to_75")
-    elif 75 <= i < 90:
-        class_category.append("75_to_90")
-    elif i >= 90:
-        class_category.append("above_90")
-    else:
-        class_category.append("absent")
-
-class_df["category"] = class_category
 
 app = Dash(external_stylesheets=[dbc.themes.SPACELAB])
 server = app.server
@@ -172,7 +125,7 @@ app.layout = dbc.Container([
         html.P(children="Section"),
         dcc.Dropdown(class_df["section"].unique(), class_df["section"][0], id="section"),
         html.P(children="Exam"),
-        dcc.Dropdown(class_df["exam"].unique(), class_df["exam"][0], id="exam"),
+        dcc.Dropdown(class_df["exam_name"].unique(), class_df["exam_name"][0], id="exam"),
 
         html.H3(children="Total Enrolled"),
         html.P(id="total_enrolled"),
@@ -202,5 +155,3 @@ app.layout = dbc.Container([
         ])
 
 app.run(debug=True)
-
-#app.run_server(debug=False)

@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import os
 from datetime import datetime
+import io
 
 def create_db(hostname, port, user, password, database):
     conn = psycopg2.connect(host=hostname, port=port, user=user, password=password, database="postgres")
@@ -102,3 +103,36 @@ def into_db(conn, curr, processed_dir):
             curr.execute("insert into loaded_files(timestamp, filename) values(current_timestamp, %s)", (file,))
             conn.commit()
         print(f"{file} loaded into DB...")
+
+def overall_result(conn, curr):
+    curr.execute("select * from marks")
+    data = curr.fetchall()
+    columns = ["roll_no", "name", "class", "section", "exam_name", "exam_marks", "subject", "marks_obtained", "attendence", "percentage", "category"]
+    df = pd.DataFrame(data, columns=columns)
+    df["marks_obtained"] = df["marks_obtained"].astype("int")
+    df = df.groupby(by=["roll_no", "name", "class", "section", "exam_name", "exam_marks"], as_index=False).agg({"marks_obtained": "sum"})
+    df["percentage"] = round((df["marks_obtained"]/(df["exam_marks"]*6))*100, 2)
+
+    category = []
+    for percentage in df["percentage"]:
+        if percentage < 33:
+            category.append("0_to_33")
+        elif 33 <= percentage < 45:
+            category.append("33_to_45")
+        elif 45 <= percentage < 60:
+            category.append("45_to_60")
+        elif 60 <= percentage < 75:
+            category.append("60_to_75")
+        elif 75 <= percentage < 90:
+            category.append("75_to_90")
+        else:
+            category.append("90_to_100")
+
+    df["category"] = category
+
+    output = io.StringIO()
+    df.to_csv(output, sep='\t', header=True, index=False)
+    output.seek(0)
+    copy_query = "COPY overall_result FROM STDOUT csv DELIMITER '\t' NULL ''  ESCAPE '\\' HEADER "
+    curr.copy_expert(copy_query, output)
+    conn.commit()

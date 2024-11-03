@@ -12,16 +12,17 @@ create table marks(
 	category varchar(16)
 );
 
--- create table overall_result(
--- 	roll_no int,
--- 	name varchar(128),
--- 	class int,
--- 	section char,
--- 	exam_name varchar(16),
--- 	exam_total int,
--- 	percentage float,
--- 	category varchar(16)
--- );
+create table overall_result(
+	roll_no int,
+	name varchar(128),
+	class int,
+	section char,
+	exam_name varchar(16),
+	exam_total int,
+	marks_obtained int,
+	percentage float,
+	category varchar(16)
+);
 
 -- create table subject_result(
 -- 	roll_no int,
