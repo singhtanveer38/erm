@@ -60,7 +60,7 @@ def preprocessing(dataDir, processedDir):
             attendence = []
             marks_new = []
             for i in df["marks"]:
-                if i in ["AB", "Ab", "ab", "ABSENT", "ABSENT "]:
+                if i in ["AB", "Ab", "ab", "ABSENT", "ABSENT ", "AB "]:
                     attendence.append("absent")
                     marks_new.append(0)
                 else:
