@@ -55,6 +55,8 @@ def preprocessing(dataDir, processedDir):
 
             df = df.melt(id_vars=["roll no", "name", "class", "section", "exam", "exam_total"], var_name="subject", value_name="marks")
 
+            df["subject"] = df["subject"].str.title()
+
             df = df.fillna(0)
 
             attendence = []
@@ -69,7 +71,6 @@ def preprocessing(dataDir, processedDir):
 
             df["attendence"] = attendence
             df["marks"] = marks_new
-            print(type(df["marks"][0]))
             df["percentage"] = round((df["marks"]/df["exam_total"]) * 100, 2)
 
             category = []
@@ -96,8 +97,23 @@ def preprocessing(dataDir, processedDir):
             print(file+" processing done")
 
 def into_db(conn, curr, processed_dir):
+    curr.execute("select * from loaded_files")
+    data = curr.fetchall()
+    columns = ["timestamp", "filename"]
+    loaded = pd.DataFrame(data, columns=columns)
+
+    #print(loaded)
+    #print(loaded.shape)
+
     for file in os.listdir(processed_dir):
         print(f"\nLoading {file} into DB...")
+
+        if loaded.shape[1] != 0:
+            #print("yo")
+            if file in loaded["filename"].values:
+                print(f"\n{file} already exists in database, skipping this file")
+                continue
+
         with open(processed_dir+file, "r") as f:
             curr.copy_from(f, "marks", sep=",")
             curr.execute("insert into loaded_files(timestamp, filename) values(current_timestamp, %s)", (file,))
