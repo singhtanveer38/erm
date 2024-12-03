@@ -154,4 +154,5 @@ app.layout = dbc.Container([
         dcc.Graph(id="category_distribution_subject"),
         ])
 
-app.run(debug=True)
+if __name__ == '__main__':
+    app.run(debug=False)
