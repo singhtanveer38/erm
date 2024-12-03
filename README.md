@@ -2,7 +2,7 @@
 
 An analytics dashboard for educational institutions to get insights of student's marks in various exams.
 
-The marksheet of the whole class should have the columns `roll no`, `name`, followed by subject columns in which marks are stored for each subject. THe filename follows a specific rule like `class_10_section_examname_totalmarks.csv`. Here is the sample for the file [class\_10\_A\_pt1\_40_.csv](class_10_A_pt1_40_.csv).
+The marksheet of the whole class should have the columns `roll no`, `name`, followed by subject columns in which marks are stored for each subject. THe filename follows a specific rule like `class_10_section_examname_totalmarks.csv`. Here is the sample for the file [class\_10\_A\_pt1\_40_.csv](./class_10_A_pt1_40_.csv).
 
 Create a python virtual environment and activate it
 
